@@ -15,7 +15,10 @@ st.set_page_config(
 )
 
 ROOT = Path(__file__).resolve().parent
-MODEL_PATH = ROOT / "models" / "spam_model.joblib"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = BASE_DIR / "spam_model.joblib"
 
 # =========================================================
 # 2. SESSION STATE AND CALLBACKS
