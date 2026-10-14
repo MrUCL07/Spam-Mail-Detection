@@ -4,8 +4,9 @@ from pathlib import Path
 import joblib
 import streamlit as st
 
+
 # =========================================================
-# 1. PAGE CONFIGURATION
+# PAGE CONFIGURATION
 # =========================================================
 st.set_page_config(
     page_title="Sentinel AI | Spam Detector",
@@ -14,15 +15,223 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-ROOT = Path(__file__).resolve().parent
-from pathlib import Path
 
+# =========================================================
+# MODEL PATH
+# Model file is in the project root on GitHub
+# =========================================================
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "spam_model.joblib"
 
+
 # =========================================================
-# 2. SESSION STATE AND CALLBACKS
-# Define callbacks before creating widgets.
+# CUSTOM CSS
+# =========================================================
+st.markdown(
+    """
+    <style>
+    /* Main application background */
+    .stApp {
+        background:
+            radial-gradient(ellipse at top left, #172957 0%, transparent 42%),
+            radial-gradient(ellipse at top right, #292365 0%, transparent 40%),
+            #080D1A;
+        color: #F5F7FF;
+    }
+
+    /* Main page spacing */
+    .block-container {
+        max-width: 1500px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    /* Global text */
+    h1, h2, h3, h4, p, label,
+    [data-testid="stMarkdownContainer"] {
+        color: #F5F7FF;
+    }
+
+    /* Text area: enforce dark background */
+    div[data-testid="stTextArea"] textarea,
+    div[data-testid="stTextArea"] textarea:hover,
+    div[data-testid="stTextArea"] textarea:focus,
+    div[data-testid="stTextArea"] textarea:active,
+    [data-baseweb="textarea"] textarea {
+        background: #080F20 !important;
+        background-color: #080F20 !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        caret-color: #FFFFFF !important;
+        border: 1px solid #344968 !important;
+        border-radius: 12px !important;
+        opacity: 1 !important;
+        box-shadow: none;
+    }
+
+    /* Text area outer container */
+    div[data-testid="stTextArea"] [data-baseweb="textarea"],
+    [data-baseweb="textarea"] {
+        background: #080F20 !important;
+        background-color: #080F20 !important;
+        border-radius: 12px !important;
+    }
+
+    /* Focus styling */
+    div[data-testid="stTextArea"] textarea:focus {
+        border: 1px solid #6366F1 !important;
+        box-shadow: 0 0 0 1px #6366F1 !important;
+    }
+
+    /* Placeholder */
+    div[data-testid="stTextArea"] textarea::placeholder {
+        color: #AAB8D0 !important;
+        -webkit-text-fill-color: #AAB8D0 !important;
+        opacity: 1 !important;
+    }
+
+    /* Single-line input boxes */
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextInput"] input:focus {
+        background: #080F20 !important;
+        background-color: #080F20 !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        caret-color: #FFFFFF !important;
+        border: 1px solid #344968 !important;
+        border-radius: 10px !important;
+    }
+
+    /* Buttons */
+    div.stButton > button {
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid #344968;
+        background: #111D34;
+        color: #F5F7FF !important;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    div.stButton > button:hover {
+        border-color: #818CF8;
+        background: #1B2A49;
+        color: #FFFFFF !important;
+    }
+
+    /* Primary analyze button */
+    div.stButton > button[kind="primary"] {
+        background: linear-gradient(90deg, #2563EB, #7C3AED);
+        border: none;
+        color: #FFFFFF !important;
+    }
+
+    div.stButton > button[kind="primary"]:hover {
+        filter: brightness(1.12);
+    }
+
+    /* Dashboard cards */
+    .sentinel-card {
+        padding: 22px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #14213A, #10192C);
+        border: 1px solid #2B405F;
+        margin: 12px 0;
+    }
+
+    .result-spam {
+        padding: 24px;
+        border-radius: 16px;
+        background: linear-gradient(120deg, #3A1728, #251728);
+        border: 1px solid #FB5675;
+        margin: 12px 0 20px 0;
+    }
+
+    .result-ham {
+        padding: 24px;
+        border-radius: 16px;
+        background: linear-gradient(120deg, #10392F, #102A2A);
+        border: 1px solid #21C995;
+        margin: 12px 0 20px 0;
+    }
+
+    .small-label {
+        color: #B7C7E0;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .score-number {
+        font-size: 28px;
+        font-weight: 800;
+        margin-top: 10px;
+    }
+
+    .muted-text {
+        color: #A9B6CC !important;
+        font-size: 14px;
+    }
+
+    /* Progress bar */
+    div[data-testid="stProgressBar"] > div {
+        background-color: #25334A;
+    }
+
+    div[data-testid="stProgressBar"] > div > div {
+        background: linear-gradient(90deg, #2196F3, #7C3AED);
+    }
+
+    /* Divider */
+    hr {
+        border-color: #202B40;
+    }
+
+    /* Expanders */
+    [data-testid="stExpander"] {
+        background: #0C1424;
+        border: 1px solid #202D43;
+        border-radius: 12px;
+    }
+
+    /* Footer */
+    .footer {
+        text-align: center;
+        color: #8493AD;
+        font-size: 12px;
+        padding-top: 25px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# =========================================================
+# LOAD TRAINED MODEL
+# =========================================================
+@st.cache_resource
+def load_model(model_path):
+    return joblib.load(model_path)
+
+
+if not MODEL_PATH.is_file():
+    st.error(
+        f"Trained model not found at: {MODEL_PATH}\n\n"
+        "Check that spam_model.joblib is in the same folder as app.py."
+    )
+    st.stop()
+
+try:
+    model = load_model(str(MODEL_PATH))
+except Exception as error:
+    st.error(f"Unable to load the trained model: {error}")
+    st.stop()
+
+
+# =========================================================
+# SESSION STATE
 # =========================================================
 if "message_text" not in st.session_state:
     st.session_state.message_text = ""
@@ -31,303 +240,90 @@ if "last_result" not in st.session_state:
     st.session_state.last_result = None
 
 
-def set_message(text):
-    """Populate the input box with a sample message."""
-    st.session_state.message_text = text
+def set_message(message):
+    st.session_state.message_text = message
     st.session_state.last_result = None
 
 
 def clear_message():
-    """Clear the input and previous prediction."""
     st.session_state.message_text = ""
     st.session_state.last_result = None
 
 
 # =========================================================
-# 3. CUSTOM CSS
+# PREDICTION FUNCTION
+# =========================================================
+def predict_message(message):
+    prediction = model.predict([message])[0]
+
+    spam_probability = None
+    ham_probability = None
+
+    if hasattr(model, "predict_proba"):
+        probabilities = model.predict_proba([message])[0]
+        classes = list(model.classes_)
+
+        for index, class_label in enumerate(classes):
+            label = str(class_label).strip().lower()
+
+            if label == "spam":
+                spam_probability = float(probabilities[index])
+
+            elif label in ("ham", "legitimate", "not spam", "not_spam"):
+                ham_probability = float(probabilities[index])
+
+        # Fallback for binary classifiers with different label names
+        if spam_probability is None and len(probabilities) == 2:
+            spam_probability = float(probabilities[1])
+
+        if ham_probability is None and len(probabilities) == 2:
+            ham_probability = float(probabilities[0])
+
+    label = str(prediction).strip().lower()
+    is_spam = label in ("spam", "1", "true")
+
+    return {
+        "is_spam": is_spam,
+        "prediction": str(prediction),
+        "spam_probability": spam_probability,
+        "ham_probability": ham_probability,
+        "message": message,
+    }
+
+
+# =========================================================
+# HEADER
 # =========================================================
 st.markdown(
     """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-    :root {
-        --bg: #080d1a;
-        --panel: #111b2e;
-        --border: #2b3c59;
-        --blue: #38bdf8;
-        --purple: #a78bfa;
-        --text: #f1f5f9;
-        --muted: #9aabc2;
-    }
-
-    .stApp {
-        background:
-            radial-gradient(ellipse at 5% 0%, #172554 0%, transparent 35%),
-            radial-gradient(ellipse at 95% 20%, #312e81 0%, transparent 32%),
-            var(--bg);
-        font-family: 'Inter', sans-serif;
-        color: var(--text);
-    }
-
-    header[data-testid="stHeader"] {
-        background: transparent;
-    }
-
-    .block-container {
-        max-width: 1500px !important;
-        padding: 1.5rem 2.5rem 2rem !important;
-    }
-
-    h1, h2, h3, p {
-        color: var(--text);
-    }
-
-    .hero {
-        background: linear-gradient(115deg, #14213d, #18294b 55%, #30235e);
-        border: 1px solid #354b72;
-        border-radius: 24px;
-        padding: 36px 40px;
-        margin-bottom: 26px;
-        box-shadow: 0 15px 50px #00000030;
-    }
-
-    .hero h1 {
-        font-size: clamp(30px, 3.5vw, 48px);
-        font-weight: 800;
-        letter-spacing: -1.4px;
-        margin: 12px 0;
-    }
-
-    .hero p {
-        color: #cbd5e1;
-        font-size: 15px;
-        line-height: 1.8;
-    }
-
-    .eyebrow {
-        color: #7dd3fc;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 2px;
-    }
-
-    .pill {
-        display: inline-block;
-        border: 1px solid #36577f;
-        background: #132746;
-        color: #bae6fd;
-        border-radius: 30px;
-        padding: 7px 12px;
-        font-size: 11px;
-        margin: 5px 5px 0 0;
-    }
-
-    .panel {
-        background: linear-gradient(145deg, #121d32, #0e1729);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 24px;
-        box-shadow: 0 12px 35px #00000020;
-        min-height: 100%;
-    }
-
-    .panel-title {
-        font-size: 21px;
-        font-weight: 750;
-        margin-bottom: 7px;
-    }
-
-    .muted {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.8;
-    }
-
-    .metric-card {
-        background: linear-gradient(145deg, #14233d, #111b2e);
-        border: 1px solid #293d5c;
-        border-radius: 16px;
-        padding: 19px;
-        min-height: 112px;
-        margin-bottom: 10px;
-    }
-
-    .metric-label {
-        color: #9fb1ca;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-
-    .metric-value {
-        font-size: 25px;
-        font-weight: 800;
-        margin-top: 12px;
-        color: #f8fafc;
-        overflow-wrap: anywhere;
-    }
-
-    .result-card {
-        padding: 23px;
-        border-radius: 16px;
-        margin: 16px 0;
-    }
-
-    .spam {
-        background: linear-gradient(120deg, #451b2b, #2c1829);
-        border: 1px solid #fb7185;
-    }
-
-    .legit {
-        background: linear-gradient(120deg, #103b35, #102c31);
-        border: 1px solid #34d399;
-    }
-
-    .result-label {
-        font-size: 26px;
-        font-weight: 800;
-        margin: 8px 0;
-    }
-
-    div[data-testid="stTextArea"] textarea {
-        background: #0a1222 !important;
-        color: #f8fafc !important;
-        border: 1px solid #344b6c !important;
-        border-radius: 14px !important;
-        font-size: 15px !important;
-        line-height: 1.7 !important;
-        padding: 16px !important;
-    }
-
-    div[data-testid="stTextArea"] textarea:focus {
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 0 2px #38bdf833 !important;
-    }
-
-    .stButton > button {
-        min-height: 45px;
-        border-radius: 11px;
-        font-weight: 650;
-        border: 1px solid #354b6b;
-        transition: 0.2s ease;
-    }
-
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(100deg, #2563eb, #7c3aed);
-        color: white;
-        border: none;
-    }
-
-    .stButton > button:hover {
-        border-color: #38bdf8;
-        color: white;
-    }
-
-    div[data-testid="stProgressBar"] > div > div {
-        background: linear-gradient(90deg, #38bdf8, #a78bfa);
-    }
-
-    div[data-testid="stMetric"] {
-        background: #121d32;
-        padding: 14px;
-        border: 1px solid #293d5c;
-        border-radius: 12px;
-    }
-
-    hr {
-        border-color: #293954;
-    }
-
-    .footer {
-        text-align: center;
-        color: #7185a5;
-        font-size: 12px;
-        padding: 25px 0 5px;
-        line-height: 2;
-    }
-
-    @media (max-width: 768px) {
-        .block-container {
-            padding: 1rem !important;
-        }
-
-        .hero {
-            padding: 23px;
-        }
-
-        .panel {
-            padding: 17px;
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# =========================================================
-# 4. LOAD THE TRAINED MODEL
-# =========================================================
-@st.cache_resource
-def load_model():
-    return joblib.load(MODEL_PATH)
-
-
-if not MODEL_PATH.exists():
-    st.error(
-        "Trained model not found. Please run train.py first "
-        "and confirm that models/spam_model.joblib exists."
-    )
-    st.stop()
-
-try:
-    model = load_model()
-except Exception as exc:
-    st.error(f"Could not load the trained model: {exc}")
-    st.stop()
-
-# =========================================================
-# 5. HERO HEADER
-# =========================================================
-st.markdown(
-    """
-    <div class="hero">
-        <div class="eyebrow">✦ INTELLIGENT MESSAGE SECURITY</div>
-        <h1>🛡️ Sentinel <span style="color:#60a5fa">AI</span></h1>
-        <p>
-            Understand your messages. Detect unwanted content.
-            Explore the power of Natural Language Processing
-            through an interactive spam classification system.
+    <div style="text-align:center; padding: 8px 0 28px 0;">
+        <div style="font-size:48px;">🛡️</div>
+        <h1 style="
+            font-size:42px;
+            font-weight:900;
+            margin:0;
+            background:linear-gradient(90deg,#60A5FA,#A78BFA,#F472B6);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;">
+            SENTINEL AI
+        </h1>
+        <p style="color:#B7C7E0; font-size:16px;">
+            Intelligent Spam Message Detection powered by NLP
         </p>
-        <div>
-            <span class="pill">NLP ENGINE</span>
-            <span class="pill">TF-IDF</span>
-            <span class="pill">LOGISTIC REGRESSION</span>
-            <span class="pill">LIVE PREDICTIONS</span>
-        </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-# =========================================================
-# 6. TOP METRICS
-# =========================================================
-vocab_size = "N/A"
+# Status metrics
+metric1, metric2, metric3 = st.columns(3)
 
-try:
-    vocab_size = f"{len(model.named_steps['tfidf'].vocabulary_):,}"
-except (AttributeError, KeyError, TypeError):
-    pass
-
-m1, m2, m3 = st.columns(3)
-
-with m1:
+with metric1:
     st.markdown(
         """
-        <div class="metric-card">
-            <div class="metric-label">SYSTEM STATUS</div>
-            <div class="metric-value" style="color:#34d399">
+        <div class="sentinel-card">
+            <div class="small-label">System status</div>
+            <div style="color:#21C995;font-size:21px;font-weight:800;">
                 ● Online
             </div>
         </div>
@@ -335,12 +331,12 @@ with m1:
         unsafe_allow_html=True,
     )
 
-with m2:
+with metric2:
     st.markdown(
         """
-        <div class="metric-card">
-            <div class="metric-label">CLASSIFIER</div>
-            <div class="metric-value" style="font-size:21px">
+        <div class="sentinel-card">
+            <div class="small-label">Model</div>
+            <div style="font-size:21px;font-weight:800;">
                 Logistic Regression
             </div>
         </div>
@@ -348,61 +344,55 @@ with m2:
         unsafe_allow_html=True,
     )
 
-with m3:
+with metric3:
     st.markdown(
-        f"""
-        <div class="metric-card">
-            <div class="metric-label">VOCABULARY FEATURES</div>
-            <div class="metric-value">{vocab_size}</div>
+        """
+        <div class="sentinel-card">
+            <div class="small-label">Text features</div>
+            <div style="font-size:21px;font-weight:800;">
+                TF-IDF
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+st.divider()
+
+
 # =========================================================
-# 7. MAIN WORKSPACE
+# MAIN TWO-COLUMN DASHBOARD
 # =========================================================
-st.write("")
-left, right = st.columns([1.2, 0.9], gap="large")
+left_col, right_col = st.columns([1.15, 0.85], gap="large")
 
-# ------------------ INPUT PANEL ------------------
-with left:
-    st.markdown(
-        '<div class="panel">',
-        unsafe_allow_html=True,
+
+# =========================================================
+# LEFT: MESSAGE ANALYZER
+# =========================================================
+with left_col:
+    st.subheader("✉️ Message Analyzer")
+
+    st.caption(
+        "Paste a message into the box below. "
+        "The trained NLP pipeline will analyze its text."
     )
 
-    st.markdown(
-        '<div class="panel-title">✉️ Message Analyzer</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<p class="muted">Paste a message into the box below. '
-        'The trained NLP pipeline will analyze its text.</p>',
-        unsafe_allow_html=True,
-    )
-
-    # This widget uses session state. Its value is updated
-    # only by callbacks declared before widget creation.
-    message = st.text_area(
+    # The key keeps the text area synchronized with quick-test buttons.
+    st.text_area(
         "Message text",
         key="message_text",
-        placeholder=(
-            "Example: Congratulations! You have won a free prize. "
-            "Claim your reward now..."
-        ),
-        height=260,
-        max_chars=10000,
+        height=220,
+        placeholder="Type or paste your message here...",
         label_visibility="collapsed",
     )
 
-    st.caption(f"📝 {len(message):,} characters")
+    message_length = len(st.session_state.message_text)
+    st.caption(f"📝 {message_length} characters")
 
-    analyze_col, clear_col = st.columns([2, 1])
+    analyze_col, clear_col = st.columns([1.4, 0.7])
 
     with analyze_col:
-        analyze = st.button(
+        analyze_clicked = st.button(
             "⚡ ANALYZE MESSAGE",
             type="primary",
             use_container_width=True,
@@ -411,109 +401,108 @@ with left:
     with clear_col:
         st.button(
             "↻ CLEAR",
-            use_container_width=True,
             on_click=clear_message,
+            use_container_width=True,
         )
 
-    st.markdown("---")
-    st.markdown("**QUICK TESTS**")
+    if analyze_clicked:
+        message = st.session_state.message_text.strip()
+
+        if not message:
+            st.warning("Please enter a message before analyzing it.")
+        else:
+            try:
+                st.session_state.last_result = predict_message(message)
+            except Exception as error:
+                st.error(f"Prediction failed: {error}")
+
+    st.divider()
+
+    st.markdown("### QUICK TESTS")
     st.caption("Choose an example to fill the message box.")
 
-    ex1, ex2, ex3 = st.columns(3)
+    test1, test2, test3 = st.columns(3)
 
-    with ex1:
+    with test1:
         st.button(
             "🎁 Prize message",
-            use_container_width=True,
             on_click=set_message,
-            args=(
-                "Congratulations! You have won a free prize. Claim now!",
-            ),
+            args=("Congratulations! You have won a free prize. Claim now!",),
+            use_container_width=True,
         )
 
-    with ex2:
+    with test2:
         st.button(
-            "🔐 Account alert",
-            use_container_width=True,
+            "🔒 Account alert",
             on_click=set_message,
             args=(
-                "Your account will be suspended. "
-                "Verify your credentials immediately.",
+                "URGENT! Your account needs verification. "
+                "Click here to claim your reward now!",
             ),
+            use_container_width=True,
         )
 
-    with ex3:
+    with test3:
         st.button(
             "💬 Normal chat",
-            use_container_width=True,
             on_click=set_message,
-            args=(
-                "Hey, are we meeting at the library at 5?",
-            ),
+            args=("Hey, are we meeting at college today?",),
+            use_container_width=True,
         )
 
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # =========================================================
-# 8. HANDLE PREDICTION
+# RIGHT: ANALYSIS RESULTS
 # =========================================================
-if analyze:
-    current_message = st.session_state.message_text.strip()
-
-    if not current_message:
-        st.session_state.last_result = None
-        st.warning("Please enter a message before analyzing.")
-    else:
-        try:
-            prediction = int(model.predict([current_message])[0])
-            probabilities = model.predict_proba([current_message])[0]
-
-            st.session_state.last_result = {
-                "prediction": prediction,
-                "confidence": float(max(probabilities)) * 100,
-                "legit_probability": float(probabilities[0]) * 100,
-                "spam_probability": float(probabilities[1]) * 100,
-                "message": current_message,
-            }
-
-        except Exception as exc:
-            st.session_state.last_result = None
-            st.error(f"Prediction failed: {exc}")
-
-# =========================================================
-# 9. RESULTS PANEL
-# =========================================================
-with right:
-    st.markdown(
-        '<div class="panel">',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="panel-title">📊 Analysis Results</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<p class="muted">Your latest prediction and '
-        'classification scores appear here.</p>',
-        unsafe_allow_html=True,
-    )
+with right_col:
+    st.subheader("📊 Analysis Results")
 
     result = st.session_state.last_result
 
-    if result is not None:
-        if result["prediction"] == 1:
+    if result is None:
+        st.markdown(
+            """
+            <div class="sentinel-card" style="padding:32px;">
+                <div style="font-size:36px;">🔍</div>
+                <h3>Ready to analyze</h3>
+                <p class="muted-text">
+                    Your latest prediction and classification scores
+                    will appear here.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <div class="sentinel-card">
+                <div class="small-label">How it works</div>
+                <p style="margin-top:12px;">
+                    1. Enter a message<br>
+                    2. Convert text using TF-IDF<br>
+                    3. Classify using the trained model<br>
+                    4. Review the prediction
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    else:
+        is_spam = result["is_spam"]
+        spam_prob = result["spam_probability"]
+        ham_prob = result["ham_probability"]
+
+        if is_spam:
             st.markdown(
                 """
-                <div class="result-card spam">
-                    <div style="font-size:12px;color:#fda4af">
-                        ⚠ CLASSIFICATION RESULT
+                <div class="result-spam">
+                    <div class="small-label" style="color:#FFB5C3;">
+                        ⚠ Classification result
                     </div>
-                    <div class="result-label">🚨 Likely Spam</div>
-                    <div style="color:#fecdd3">
-                        The model classified this message as spam.
-                    </div>
+                    <h2 style="margin:12px 0;">🚨 Likely Spam</h2>
+                    <p>The model classified this message as spam.</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -521,189 +510,98 @@ with right:
         else:
             st.markdown(
                 """
-                <div class="result-card legit">
-                    <div style="font-size:12px;color:#6ee7b7">
-                        ✓ CLASSIFICATION RESULT
+                <div class="result-ham">
+                    <div class="small-label" style="color:#82F3CF;">
+                        ✓ Classification result
                     </div>
-                    <div class="result-label">
-                        ✅ Likely Legitimate
-                    </div>
-                    <div style="color:#a7f3d0">
-                        The model classified this message as legitimate.
-                    </div>
+                    <h2 style="margin:12px 0;">✅ Likely Legitimate</h2>
+                    <p>The model classified this message as ham.</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-        st.markdown("**Prediction confidence**")
-        st.progress(
-            min(1.0, max(0.0, result["confidence"] / 100))
-        )
+        # Display confidence only if the model supports predict_proba.
+        if spam_prob is not None and ham_prob is not None:
+            confidence = spam_prob if is_spam else ham_prob
 
-        st.markdown(
-            f"""
-            <div style="font-size:32px;font-weight:800;
-                        margin:5px 0 18px 0">
-                {result['confidence']:.1f}%
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        p1, p2 = st.columns(2)
-
-        with p1:
+            st.markdown("**Prediction confidence**")
+            st.progress(max(0.0, min(1.0, confidence)))
             st.markdown(
-                f"""
-                <div class="metric-card">
-                    <div class="metric-label">LEGITIMATE SCORE</div>
-                    <div class="metric-value"
-                         style="color:#34d399;font-size:23px">
-                        {result['legit_probability']:.1f}%
-                    </div>
-                </div>
-                """,
+                f"<div style='font-size:30px;font-weight:900;'>"
+                f"{confidence * 100:.1f}%</div>",
                 unsafe_allow_html=True,
             )
 
-        with p2:
-            st.markdown(
-                f"""
-                <div class="metric-card">
-                    <div class="metric-label">SPAM SCORE</div>
-                    <div class="metric-value"
-                         style="color:#fb7185;font-size:23px">
-                        {result['spam_probability']:.1f}%
+            score1, score2 = st.columns(2)
+
+            with score1:
+                st.markdown(
+                    f"""
+                    <div class="sentinel-card">
+                        <div class="small-label">Legitimate score</div>
+                        <div class="score-number"
+                             style="color:#21C995;">
+                            {ham_prob * 100:.1f}%
+                        </div>
                     </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            with score2:
+                st.markdown(
+                    f"""
+                    <div class="sentinel-card">
+                        <div class="small-label">Spam score</div>
+                        <div class="score-number"
+                             style="color:#FB7185;">
+                            {spam_prob * 100:.1f}%
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info(
+                "This model does not provide probability scores. "
+                "Only the predicted class is shown."
             )
 
         with st.expander("View analyzed message"):
             st.write(result["message"])
 
         st.caption(
-            "These scores are model outputs, not a guarantee "
-            "that a message is safe or malicious."
+            "These are model outputs, not a guarantee that a message "
+            "is safe or malicious."
         )
 
-    else:
-        st.markdown(
-            """
-            <div style="text-align:center;padding:42px 10px">
-                <div style="font-size:55px">🔎</div>
-                <h3 style="color:#cbd5e1">Ready to Analyze</h3>
-                <p style="color:#94a3b8;line-height:1.8">
-                    Enter a message on the left and click
-                    Analyze Message to view its prediction.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("---")
-    st.markdown("**🧠 THE NLP PIPELINE**")
-
-    pipeline_steps = [
-        ("01", "Text input", "Receive the message"),
-        ("02", "TF-IDF", "Convert text into numerical features"),
-        ("03", "Classification", "Apply Logistic Regression"),
-        ("04", "Prediction", "Return spam or legitimate"),
-    ]
-
-    for number, title, description in pipeline_steps:
-        st.markdown(
-            f"""
-            <div style="padding:11px 0;
-                        border-bottom:1px solid #293954">
-                <span style="color:#7dd3fc;font-weight:800">
-                    {number}
-                </span>
-                &nbsp; <strong>{title}</strong>
-                <div style="color:#94a3b8;font-size:12px;
-                            margin:5px 0 0 31px">
-                    {description}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # =========================================================
-# 10. EDUCATIONAL SECTION
+# NLP PIPELINE INFORMATION
 # =========================================================
-st.write("")
-st.write("")
+st.divider()
 
-st.markdown("## 🧩 Understanding the Results")
-st.markdown(
-    '<p class="muted">Learn what each prediction means.</p>',
-    unsafe_allow_html=True,
-)
+with st.expander("🧠 THE NLP PIPELINE"):
+    pipeline1, pipeline2, pipeline3 = st.columns(3)
 
-g1, g2, g3 = st.columns(3, gap="medium")
+    with pipeline1:
+        st.markdown("### 01 · Input")
+        st.write("The user enters an SMS message for classification.")
 
-with g1:
-    st.markdown(
-        """
-        <div class="panel">
-            <h3>🚨 Spam</h3>
-            <p class="muted">
-                The classifier recognizes patterns associated with
-                spam messages in its training data.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with pipeline2:
+        st.markdown("### 02 · TF-IDF")
+        st.write("Text is converted into numerical feature values.")
 
-with g2:
-    st.markdown(
-        """
-        <div class="panel">
-            <h3>✅ Legitimate</h3>
-            <p class="muted">
-                The classifier predicts that the text resembles
-                legitimate messages in its training data.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with pipeline3:
+        st.markdown("### 03 · Prediction")
+        st.write("The trained Logistic Regression model predicts the class.")
 
-with g3:
-    st.markdown(
-        """
-        <div class="panel">
-            <h3>🛡️ Stay Cautious</h3>
-            <p class="muted">
-                This is a research prototype, not a security guarantee.
-                A legitimate result can still contain malicious links.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# =========================================================
-# 11. FOOTER
-# =========================================================
 st.markdown(
     """
     <div class="footer">
-        <strong>SENTINEL AI</strong>
-        <br>
-        Built with Python · Streamlit · TF-IDF · scikit-learn
-        <br>
-        Educational NLP project · Predictions may be incorrect
-        <br>
-        This model classifies spam versus legitimate messages.
-        Dedicated phishing detection requires separate training and evaluation.
+        SENTINEL AI · NLP & Machine Learning Project<br>
+        Built with Python, Scikit-learn and Streamlit
     </div>
     """,
     unsafe_allow_html=True,
